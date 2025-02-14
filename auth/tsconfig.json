@@ -12,6 +12,7 @@
 			"@/*": ["/*"],
       "@utils/*": ["utils/*"],
       "@routes/*": ["routes/*"],
+      "@middlewares/*": ["middlewares/*"],
 		}
 	}
 }
