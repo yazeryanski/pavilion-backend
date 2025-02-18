@@ -1,15 +1,13 @@
 import Redis from 'ioredis';
 import "dotenv/config";
 import logger from '@utils/logger';
+import env from 'config';
 
-const port = Number.parseInt(process.env.REDIS_PORT || '6379');
-const host = process.env.REDIS_HOST || '127.0.0.1';
-const password = process.env.REDIS_PASSWORD || undefined;
 
 const redis = new Redis({
-  host,
-  port,
-  password,
+  host: env.REDIS_HOST,
+  port: env.REDIS_PORT,
+  password: env.REDIS_PASSWORD,
   retryStrategy: (times) => {
     if (times > 20) {
       logger.error('Redis connection lost. Exiting application...');

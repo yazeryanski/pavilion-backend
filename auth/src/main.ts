@@ -1,17 +1,16 @@
 import express from 'express';
 
+import env from 'config';
+import redis from './connections/redisClient';
+
+import logger from '@utils/logger';
+
 import responseHandler from '@middlewares/responseHandler.middleware';
 import { httpLogger } from '@middlewares/httpLogger';
 
-import getPort from '@utils/getPort';
-import logger from '@utils/logger';
-
 import router from '@routes/index';
 
-import redis from './connections/redisClient';
-
 const app = express();
-const port = getPort();
 
 // Middlewares
 app.use(express.json());
@@ -21,13 +20,14 @@ app.use(responseHandler);
 // Routes
 app.use('/api/', router);
 
-
+// Server
 (async () => {
   try {
+    // Run server once Redis is connected
     await redis.ping();
 
-    app.listen(port, () => {
-      logger.info(`Server is running on port ${port}`);
+    app.listen(env.NODE_PORT, () => {
+      logger.info(`Server is running on port ${env.NODE_PORT}`);
     });
   } catch (err) {
     logger.error('Failed to run the server', err);
