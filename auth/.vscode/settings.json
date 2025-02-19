@@ -4,6 +4,9 @@
 	"editor.formatOnSave": true,
 	"editor.tabSize": 2,
 	"editor.insertSpaces": false,
+	"editor.codeActionsOnSave": {
+		"source.fixAll": "always"
+	},
 	"[typescript]": {
 		"editor.defaultFormatter": "biomejs.biome"
 	},

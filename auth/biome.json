@@ -27,6 +27,12 @@
 			},
 			"suspicious": {
 				"noExplicitAny": "warn"
+			},
+			"style": {
+				"useImportType": {
+					"fix": "safe",
+					"level": "error"
+				}
 			}
 		}
 	},
