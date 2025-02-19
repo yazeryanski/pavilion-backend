@@ -1,10 +1,9 @@
 import asyncHandler from '@utils/asyncHandler';
-import initTokens from '@utils/initTokens';
 import { verifyRefreshToken } from '@utils/jwt';
 import redis from 'connections/redisClient';
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 
-const refreshController = async (req: Request, res: Response) => {
+export const validateRefreshToken = async (req: Request, res: Response, next: NextFunction) => {
 	if (!req.body.refreshToken) {
 		res.error('Refresh token is required', 400);
 		return;
@@ -19,12 +18,10 @@ const refreshController = async (req: Request, res: Response) => {
 		return;
 	}
 
-	const { accessToken, refreshToken: newRefreshToken } = await initTokens(userId);
+	req.body.userId = userId;
+	req.body.refreshToken = refreshToken;
 
-	res.success({
-		accessToken,
-		refreshToken: newRefreshToken,
-	});
+	next();
 };
 
-export default asyncHandler(refreshController);
+export default asyncHandler(validateRefreshToken);

@@ -6,9 +6,10 @@ import redis from './connections/redisClient';
 import logger from '@utils/logger';
 
 import responseHandler from '@middlewares/responseHandler.middleware';
-import { httpLogger } from '@middlewares/httpLogger';
+import { httpLogger } from '@middlewares/httpLogger.middleware';
 
 import router from '@routes/index';
+import errorHandler from '@middlewares/errorHandler.middleware';
 
 const app = express();
 
@@ -19,6 +20,9 @@ app.use(responseHandler);
 
 // Routes
 app.use('/api/', router);
+
+// Error Handler - Must be the last middleware
+app.use(errorHandler as express.ErrorRequestHandler);
 
 // Server
 (async () => {

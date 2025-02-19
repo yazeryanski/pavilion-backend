@@ -2,10 +2,11 @@ import { PrismaClient } from '@prisma/client';
 import type { Request, Response } from 'express';
 import bcryptjs from 'bcryptjs';
 import initTokens from '@utils/initTokens';
+import asyncHandler from '@utils/asyncHandler';
 
 const prisma = new PrismaClient();
 
-export const loginController = async (req: Request, res: Response) => {
+const loginController = async (req: Request, res: Response) => {
 	const { email, password } = req.body;
 
 	const user = await prisma.user.findUnique({
@@ -26,3 +27,5 @@ export const loginController = async (req: Request, res: Response) => {
 		refreshToken,
 	});
 };
+
+export default asyncHandler(loginController);

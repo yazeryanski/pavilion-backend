@@ -2,10 +2,11 @@ import bcryptjs from 'bcryptjs';
 import type { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import initTokens from '@utils/initTokens';
+import asyncHandler from '@utils/asyncHandler';
 
 const prisma = new PrismaClient();
 
-export const registerController = async (req: Request, res: Response) => {
+const registerController = async (req: Request, res: Response) => {
 	const { email, password } = req.body;
 
 	const existingUser = await prisma.user.findUnique({
@@ -33,3 +34,5 @@ export const registerController = async (req: Request, res: Response) => {
 		refreshToken,
 	});
 };
+
+export default asyncHandler(registerController);
