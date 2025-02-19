@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import env from "config";
+import env, { REFRESH_TOKEN_EXPIRATION } from "config";
 
 // #region AccessToken
 export const generateAccessToken = (userId: string): string => {
@@ -13,7 +13,7 @@ export const verifyAccessToken = (token: string): string | object => {
 
 // #region RefreshToken
 export const generateRefreshToken = (userId: string): string => {
-  return jwt.sign({ id: userId }, env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
+  return jwt.sign({ id: userId }, env.REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRATION });
 }
 
 export const verifyRefreshToken = (token: string): string | object => {

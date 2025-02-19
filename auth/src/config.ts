@@ -15,4 +15,6 @@ const env = cleanEnv(process.env, {
   REDIS_PASSWORD: str({ devDefault: undefined }),
 });
 
+export const REFRESH_TOKEN_EXPIRATION = 60 * 60 * 24 * 7; // 7 days
+
 export default env;
