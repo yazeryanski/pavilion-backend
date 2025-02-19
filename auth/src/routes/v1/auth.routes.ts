@@ -1,12 +1,10 @@
-import logger from '@utils/logger';
+import validateCredentials from '@middlewares/validateCredentials.middleware';
+import { loginController, registerController } from 'controllers/auth.controller';
 import express from 'express';
-import { v4 as uuidv4 } from 'uuid';
 
 const authRouter = express.Router();
 
-authRouter.post('/login', (req, res) => {
-  logger.info(`Email: ${req.body.email}, Password: ${req.body.password}`);
-  res.success({ token: uuidv4() });
-})
+authRouter.post('/login', validateCredentials, loginController)
+authRouter.post('/register', validateCredentials, registerController)
 
 export default authRouter;
