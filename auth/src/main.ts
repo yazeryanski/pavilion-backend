@@ -22,16 +22,15 @@ app.use('/api/', router);
 
 // Server
 (async () => {
-  try {
-    // Run server once Redis is connected
-    await redis.ping();
+	try {
+		// Run server once Redis is connected
+		await redis.ping();
 
-    app.listen(env.NODE_PORT, () => {
-      logger.info(`Server is running on port ${env.NODE_PORT}`);
-    });
-  } catch (err) {
-    logger.error('Failed to run the server', err);
-    process.exit(1);
-  }
+		app.listen(env.NODE_PORT, () => {
+			logger.info(`Server is running on port ${env.NODE_PORT}`);
+		});
+	} catch (err) {
+		logger.error('Failed to run the server', err);
+		process.exit(1);
+	}
 })();
-
