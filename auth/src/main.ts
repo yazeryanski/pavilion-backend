@@ -10,6 +10,7 @@ import env from '@/config';
 
 import redis from '@/utils/redis';
 import logger from '@utils/logger';
+import prisma from './utils/prisma';
 
 const app = express();
 
@@ -27,8 +28,9 @@ app.use(errorHandler as express.ErrorRequestHandler);
 // Server
 (async () => {
 	try {
-		// Run server once Redis is connected
+		// Run server once Redis & DB are connected
 		await redis.ping();
+		await prisma.$connect().then(() => logger.info('Connected to database'));
 
 		app.listen(env.NODE_PORT, () => {
 			logger.info(`Server is running on port ${env.NODE_PORT}`);
