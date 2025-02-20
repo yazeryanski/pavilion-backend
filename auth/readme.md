@@ -20,6 +20,7 @@ The auth microservice handles user authentication and authorization for the Pavi
 - **Prisma**: ORM for database management
 - **Redis**: In-memory data structure store for caching and session management
 - **JWT**: JSON Web Tokens for secure authentication
+- **Biomejs**: linter and formatter 
 
 ## Getting Started
 
