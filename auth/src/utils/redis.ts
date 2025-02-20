@@ -1,7 +1,7 @@
 import Redis from 'ioredis';
 import 'dotenv/config';
+import env from '@/config';
 import logger from '@utils/logger';
-import env from 'config';
 
 const redis = new Redis({
 	host: env.REDIS_HOST,

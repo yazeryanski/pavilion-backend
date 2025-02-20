@@ -1,10 +1,8 @@
+import prisma from '@/utils/prisma';
+import asyncHandler from '@utils/asyncHandler';
+import initTokens from '@utils/initTokens';
 import bcryptjs from 'bcryptjs';
 import type { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import initTokens from '@utils/initTokens';
-import asyncHandler from '@utils/asyncHandler';
-
-const prisma = new PrismaClient();
 
 const registerController = async (req: Request, res: Response) => {
 	const { email, password } = req.body;

@@ -1,15 +1,15 @@
 import express from 'express';
 
-import env from 'config';
-import redis from './connections/redisClient';
-
-import logger from '@utils/logger';
-
-import responseHandler from '@middlewares/responseHandler.middleware';
+import errorHandler from '@middlewares/errorHandler.middleware';
 import { httpLogger } from '@middlewares/httpLogger.middleware';
+import responseHandler from '@middlewares/responseHandler.middleware';
 
 import router from '@routes/index';
-import errorHandler from '@middlewares/errorHandler.middleware';
+
+import env from '@/config';
+
+import redis from '@/utils/redis';
+import logger from '@utils/logger';
 
 const app = express();
 

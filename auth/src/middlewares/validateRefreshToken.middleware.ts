@@ -1,6 +1,7 @@
+import redis from '@/utils/redis';
 import asyncHandler from '@utils/asyncHandler';
 import { verifyRefreshToken } from '@utils/jwt';
-import redis from 'connections/redisClient';
+
 import type { NextFunction, Request, Response } from 'express';
 
 export const validateRefreshToken = async (req: Request, res: Response, next: NextFunction) => {

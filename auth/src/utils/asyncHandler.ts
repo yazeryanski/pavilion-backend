@@ -3,7 +3,7 @@
 	we need to wrap the async controllers & middlewares with **asyncHandler** to catch the asynchronous errors.
 */
 
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 
 export default function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) {
 	return (req: Request, res: Response, next: NextFunction) => {

@@ -1,5 +1,5 @@
+import redis from '@/utils/redis';
 import asyncHandler from '@utils/asyncHandler';
-import redis from 'connections/redisClient';
 import type { Request, Response } from 'express';
 
 const logoutController = async (req: Request, res: Response) => {

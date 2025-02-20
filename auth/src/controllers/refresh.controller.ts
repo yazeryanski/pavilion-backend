@@ -1,7 +1,7 @@
+import redis from '@/utils/redis';
 import asyncHandler from '@utils/asyncHandler';
 import initTokens from '@utils/initTokens';
 import { verifyRefreshToken } from '@utils/jwt';
-import redis from 'connections/redisClient';
 import type { Request, Response } from 'express';
 
 const refreshController = async (req: Request, res: Response) => {

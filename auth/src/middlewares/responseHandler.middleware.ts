@@ -1,4 +1,4 @@
-import type { NextFunction, Response, Request } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 
 // Extend Express Response type to include custom methods
 declare global {

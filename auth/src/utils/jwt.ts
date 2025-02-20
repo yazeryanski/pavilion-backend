@@ -1,5 +1,5 @@
-import jwt from 'jsonwebtoken';
 import env, { ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_EXPIRATION } from 'config';
+import jwt from 'jsonwebtoken';
 
 import type { AccessTokenPayload, RefreshTokenPayload } from 'models/jwt.model';
 

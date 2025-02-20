@@ -1,6 +1,6 @@
-import redis from 'connections/redisClient';
-import { generateAccessToken, generateRefreshToken } from './jwt';
+import redis from '@/utils/redis';
 import { REFRESH_TOKEN_EXPIRATION } from 'config';
+import { generateAccessToken, generateRefreshToken } from './jwt';
 
 const getTokens = (userId: string) => {
 	const accessToken = generateAccessToken(userId);

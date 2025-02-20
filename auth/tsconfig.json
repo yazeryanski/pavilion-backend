@@ -9,10 +9,13 @@
 		"resolveJsonModule": true,
 		"baseUrl": "src",
 		"paths": {
-			"@/*": ["/*"],
+			"@/*": ["*"],
 			"@utils/*": ["utils/*"],
 			"@routes/*": ["routes/*"],
-			"@middlewares/*": ["middlewares/*"]
+			"@middlewares/*": ["middlewares/*"],
+			"@controllers/*": ["controllers/*"],
+			"@models/*": ["models/*"],
+			"@connections/*": ["connections/*"]
 		}
 	}
 }
