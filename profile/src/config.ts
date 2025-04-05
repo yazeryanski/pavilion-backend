@@ -8,4 +8,6 @@ const env = cleanEnv(process.env, {
 	DATABASE_URL: str(),
 });
 
+export const DEFAULT_USER_NAME = 'Anonymous';
+
 export default env;
