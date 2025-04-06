@@ -15,6 +15,7 @@
 		"dotenv": "^16.4.7",
 		"envalid": "^8.0.0",
 		"express": "^4.21.2",
+		"sanitize-html": "^2.15.0",
 		"winston": "^3.17.0",
 		"zod": "^3.24.2"
 	},
@@ -22,6 +23,7 @@
 		"@biomejs/biome": "1.9.4",
 		"@types/express": "^5.0.0",
 		"@types/node": "^22.13.4",
+		"@types/sanitize-html": "^2.15.0",
 		"@types/winston": "^2.4.4",
 		"nodemon": "^3.1.9",
 		"prisma": "^6.4.0",
