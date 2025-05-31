@@ -1,7 +1,7 @@
 {
 	"name": "pavilion-be-profile",
 	"version": "1.0.0",
-	"description": "Pavilion App, Auth Service",
+	"description": "Pavilion App, Profile Service",
 	"main": "main.js",
 	"scripts": {
 		"dev": "nodemon",

@@ -37,6 +37,13 @@ To get started with the Profile Microservice, follow these steps:
    - Description: Authenticates a user and returns a token.
 
 
+## Headers
+
+Each endpoint requires the following headers:
+- `x-user-id`
+- `x-service-name`
+- `x-request-id`
+
 ## License
 
 This project is licensed under the MIT License.
