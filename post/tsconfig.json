@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"target": "ES6",
+		"module": "CommonJS",
+		"outDir": "dist",
+		"rootDir": "src",
+		"strict": true,
+		"esModuleInterop": true,
+		"resolveJsonModule": true,
+		"baseUrl": "src",
+		"paths": {
+			"@/*": ["*"],
+			"@utils/*": ["utils/*"],
+			"@routes/*": ["routes/*"],
+			"@middlewares/*": ["middlewares/*"],
+			"@controllers/*": ["controllers/*"],
+			"@models/*": ["models/*"]
+		}
+	}
+}
