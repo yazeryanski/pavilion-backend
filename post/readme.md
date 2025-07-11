@@ -11,6 +11,7 @@ This is a boilerplate project for building a RESTful API using Express and TypeS
 - [Contributing](#contributing)
 - [License](#license)
 - [Headers](#headers)
+- [S3/MinIO Configuration Note](#s3minio-configuration-note)
 
 ## Features
 
@@ -103,3 +104,9 @@ Each endpoint requires the following headers:
 - `x-user-id`
 - `x-service-name`
 - `x-request-id`
+
+## S3/MinIO Configuration Note
+
+If you are using MinIO as your S3-compatible storage, the SDK client is configured with `forcePathStyle: true` for compatibility. If you are using AWS S3, you should turn this option off for best compatibility and performance.
+
+See `src/utils/s3.ts` for details.

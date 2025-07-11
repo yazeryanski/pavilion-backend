@@ -11,6 +11,7 @@
 	"author": "Narek Yazeryan",
 	"license": "ISC",
 	"dependencies": {
+		"@aws-sdk/client-s3": "^3.821.0",
 		"@prisma/client": "^6.4.0",
 		"dotenv": "^16.4.7",
 		"envalid": "^8.0.0",

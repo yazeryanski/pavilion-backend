@@ -1,0 +1,10 @@
+To simulate AWS S3 using MinIO, run this docker command:
+
+docker run \
+   -p 9000:9000 \
+   -p 9001:9001 \
+   --name minio1 \
+   -v D:/www/data-storage/minio:/data \
+   -e "MINIO_ROOT_USER=ROOT" \
+   -e "MINIO_ROOT_PASSWORD=12345678" \
+   minio/minio server /data --console-address ":9001"
