@@ -7,14 +7,13 @@
 		"strict": true,
 		"esModuleInterop": true,
 		"resolveJsonModule": true,
-		"baseUrl": "src",
 		"paths": {
-			"@/*": ["*"],
-			"@utils/*": ["utils/*"],
-			"@routes/*": ["routes/*"],
-			"@middlewares/*": ["middlewares/*"],
-			"@controllers/*": ["controllers/*"],
-			"@models/*": ["models/*"]
+			"@/*": ["./src/*"],
+			"@utils/*": ["./src/utils/*"],
+			"@routes/*": ["./src/routes/*"],
+			"@middlewares/*": ["./src/middlewares/*"],
+			"@controllers/*": ["./src/controllers/*"],
+			"@models/*": ["./src/models/*"]
 		}
 	}
 }
