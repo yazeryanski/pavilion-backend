@@ -41,7 +41,6 @@ const requestHeaderHandler = (req: Express.Request, res: Response, next: NextFun
 	req.serviceName = serviceName;
 	req.requestId = requestId;
 
-	// Call the next middleware or route handler
 	next();
 };
 
