@@ -1,59 +1,78 @@
 # Pavilion Backend
 
-Pavilion - A Social Network application, based on a microservice architecture.
+Pavilion — A social network application built on a microservice architecture.
 
 ## Architecture
-- services/
-  - auth/ - Auth Service
-  - post/ - Post service
-  - profile/ - User Profile Service 
-- shared/
-  - types/
-  - utils/
 
-## Stack for each service (base)
-Node.js / Express
-TypeScript (strict mode)
-Winston request/response logging
+```
+services/
+  auth/     - Authentication & token issuance
+  post/     - Post CRUD and image uploads
+  profile/  - User profile management
+shared/
+  types/    - (planned) shared TypeScript types
+  utils/    - (planned) shared utility code
+```
 
-Each service has its own CLAUDE.md
+## Stack (all services)
+
+- Node.js / Express / TypeScript (strict mode)
+- Prisma + PostgreSQL (each service has its own database)
+- Winston (logging: console + `logs/error.log` + `logs/combined.log`)
+- Biome (linter + formatter) — required for all services
+- envalid (environment variable validation)
+- Zod (input validation — use when validation is needed; not mandatory in every service)
+- nodemon (dev server)
+
+Each service has its own CLAUDE.md with service-specific details.
 
 ## Commands
-No global commands (yet). Do not run all services at once, instead check how to run for a specific service in its own CLAUDE.md.
 
-## Base Rules (all services)
-- All API responses use the shape:
-  - success: { success: true, data: T }
-  - error:   { success: false, data: string }  // error message
-- Implemented by `responseHandler` middleware — use it, never build
-  responses manually.
+No global commands. Run services individually — see each service's CLAUDE.md.
 
-## Boundaries (Do NOT)
-- Each service owns its own database — never query another service's DB directly.
-- Never import code from another service's directory.
-- Inter-service calls go through 
-  - direct HTTP for request/response; 
-  - RabbitMQ for async work (notifications, fan-out, anything that shouldn't block the response).
-- Never add JWT validation in the services (it's only in auth)
-- New routes must sit behind requestHeaderHandler — never read
-  x-user-id from raw headers; use req.userId.
-- Shared code (types, utils) lives in shared/ — import from there, never duplicate across services.
+## API Response Shape
 
-## Commits
-[SERVICE] feat/fix: description
+All responses use a single envelope, implemented by `responseHandler` middleware:
 
-### examples:
-[AUTH] feat: add a new header to request
-[POST] fix: the post delete logic
-[PROFILE] feat: add avatar support
+- Success: `{ success: true, data: T }`
+- Error:   `{ success: false, data: string }` (error message in `data`)
 
-## READ WHEN
-- I'm asking to do some job at specific service: services/$service/CLAUDE.md
-- I'm asking to setup a new service: agent_docs/new-service-creation.md
+Never build response objects manually. Always use `res.success(data?)` and `res.error(message, statusCode?)`.
 
 ## Request Flow
-Client → API Gateway/upstream service → sets x-user-id, x-service-name, x-request-id headers → service
 
-Each service endpoint gets x-user-id / x-service-name / x-request-id headers, and all services have a middleware named `requestHeaderHandler` which transforms them into request properties (req.userId, req.serviceName, req.requestId)
+```
+Client → API Gateway / upstream → injects x-user-id, x-service-name, x-request-id headers → service
+```
 
-The `auth` service issues JWTs; the `post` and `profile` services do **not** validate JWTs themselves — they trust the `x-user-id` header injected by the upstream layer
+`post` and `profile` use `requestHeaderHandler` middleware to map these headers onto `req.userId`,
+`req.serviceName`, and `req.requestId`. The `auth` service does **not** use `requestHeaderHandler` —
+it is the upstream issuer, not a downstream consumer.
+
+## Boundaries (Do NOT)
+
+- Each service owns its own database — never query another service's DB directly.
+- Never import code from another service's directory.
+- Inter-service synchronous calls use direct HTTP. Async/fan-out messaging is planned via RabbitMQ (see Roadmap).
+- Never add JWT validation inside `post` or `profile` — JWT verification is handled exclusively in `auth`.
+- In `post` and `profile`: never read `x-user-id` from raw headers. Use `req.userId` (set by `requestHeaderHandler`).
+- Shared types and utilities go in `shared/` — never duplicate across services.
+
+## Commits
+
+```
+[SERVICE] type: description
+
+[AUTH] feat: add token rotation on refresh
+[POST] fix: ownership check on delete
+[PROFILE] feat: add avatar support
+```
+
+## Roadmap
+
+- **RabbitMQ** — async messaging for notifications and fan-out events (not yet implemented).
+
+## READ WHEN
+
+- Working on a specific service → `services/<service>/CLAUDE.md`
+- Setting up a new service → `agent_docs/new-service-creation.md`
