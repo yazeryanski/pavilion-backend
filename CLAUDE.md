@@ -28,7 +28,23 @@ Each service has its own CLAUDE.md with service-specific details.
 
 ## Commands
 
-No global commands. Run services individually — see each service's CLAUDE.md.
+Same across services (run from `services/<service>/`):
+
+```
+npm run dev     # nodemon
+npm run build   # tsc (post uses tsc-alias)
+npm start       # node dist/main.js
+npx biome check # lint + format
+```
+
+Each service refuses to start unless its datastore connects (`src/main.ts`); some need extras (auth: Redis, post: S3-compatible store).
+
+## Conventions (all services)
+
+- Routes under `/api/v1`; every service exposes `GET /health`.
+- Env validated via envalid in `src/config.ts` (see each `.env.example`).
+- Path aliases (`@/`, `@utils/`, …) defined in `tsconfig.json`.
+- One Prisma model per service in `prisma/schema.prisma`.
 
 ## API Response Shape
 
@@ -75,4 +91,4 @@ it is the upstream issuer, not a downstream consumer.
 ## READ WHEN
 
 - Working on a specific service → `services/<service>/CLAUDE.md`
-- Setting up a new service → `agent_docs/new-service-creation.md`
+- Setting up a new service → `services/agent_docs/new-service-creation.md`
