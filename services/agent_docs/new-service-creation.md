@@ -40,7 +40,7 @@ Re-read the root [CLAUDE.md](../../CLAUDE.md) "Boundaries" section. In short:
 - Own database only — no cross-service DB queries, no importing another service's code.
 - `post`/`profile`-style downstream services read identity from `req.userId` (set by
   `requestHeaderHandler`), never from raw `x-user-id`. Do not add JWT validation — that lives in `auth`.
-- Shared types/utils belong in `shared/`, not duplicated here.
+- Each service is self-contained — there is no shared code module. If two services need the same type or util, duplicate it in each.
 
 ## 5. Document the service
 

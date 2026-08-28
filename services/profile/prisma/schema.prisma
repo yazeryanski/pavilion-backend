@@ -18,6 +18,7 @@ model Profile {
 	userId    String   @unique // foreign key to user id in auth service
 	name      String?
 	avatar    String?
+	friendIds String[] @default([]) // user ids of this user's friends (used for newsletter fan-out)
 	createdAt DateTime @default(now())
 	updatedAt DateTime @updatedAt
 }

@@ -6,12 +6,10 @@ Pavilion — A social network application built on a microservice architecture.
 
 ```
 services/
-  auth/     - Authentication & token issuance
-  post/     - Post CRUD and image uploads
-  profile/  - User profile management
-shared/
-  types/    - (planned) shared TypeScript types
-  utils/    - (planned) shared utility code
+  auth/       - Authentication & token issuance
+  post/       - Post CRUD and image uploads
+  profile/    - User profile management
+  newsletter/ - Per-user feed of friends' posts (RabbitMQ consumer)
 ```
 
 ## Stack (all services)
@@ -72,7 +70,7 @@ it is the upstream issuer, not a downstream consumer.
 - Inter-service synchronous calls use direct HTTP. Async/fan-out messaging is planned via RabbitMQ (see Roadmap).
 - Never add JWT validation inside `post` or `profile` — JWT verification is handled exclusively in `auth`.
 - In `post` and `profile`: never read `x-user-id` from raw headers. Use `req.userId` (set by `requestHeaderHandler`).
-- Shared types and utilities go in `shared/` — never duplicate across services.
+- Each service is self-contained — there is no shared code module. If two services need the same type or util, duplicate it in each.
 
 ## Commits
 
