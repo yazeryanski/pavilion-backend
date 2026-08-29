@@ -1,0 +1,10 @@
+node_modules
+dist
+logs
+.git
+.vscode
+
+# Excluded deliberately: compose supplies configuration via the environment, and dotenv does
+# not override existing process.env. Keeping .env out of the image means the host file stays
+# usable for running the service outside Docker without leaking into containers.
+.env

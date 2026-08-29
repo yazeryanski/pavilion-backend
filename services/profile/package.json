@@ -5,16 +5,21 @@
 	"main": "main.js",
 	"scripts": {
 		"dev": "nodemon",
-		"build": "tsc",
+		"build": "tsc && tsc-alias",
 		"start": "node dist/main.js"
 	},
 	"author": "Narek Yazeryan",
 	"license": "ISC",
+	"packageManager": "pnpm@10.13.1",
+	"pnpm": {
+		"onlyBuiltDependencies": ["@prisma/client", "@prisma/engines", "prisma"]
+	},
 	"dependencies": {
 		"@prisma/client": "^6.4.0",
 		"dotenv": "^16.4.7",
 		"envalid": "^8.0.0",
 		"express": "^4.21.2",
+		"prisma": "^6.4.0",
 		"sanitize-html": "^2.15.0",
 		"winston": "^3.17.0",
 		"zod": "^3.24.2"
@@ -26,8 +31,8 @@
 		"@types/sanitize-html": "^2.15.0",
 		"@types/winston": "^2.4.4",
 		"nodemon": "^3.1.9",
-		"prisma": "^6.4.0",
 		"ts-node": "^10.9.2",
+		"tsc-alias": "^1.8.16",
 		"tsconfig-paths": "^4.2.0",
 		"typescript": "^5.7.3"
 	}

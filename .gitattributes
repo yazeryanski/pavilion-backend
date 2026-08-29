@@ -1,0 +1,4 @@
+# Shell scripts are executed inside Linux containers — CRLF endings would break the shebang.
+*.sh text eol=lf
+docker/**/*.sh text eol=lf
+Dockerfile text eol=lf

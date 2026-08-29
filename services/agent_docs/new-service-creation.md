@@ -15,8 +15,9 @@ From `services/`, clone into a folder named after the service (lowercase, e.g. `
 ```bash
 git clone https://github.com/yazeryanski/express-ts-boilerplate.git <service>
 cd <service>
-rm -rf .git            # detach from the boilerplate's history — this lives in the monorepo
-npm install
+rm -rf .git                 # detach from the boilerplate's history — this lives in the monorepo
+rm -f package-lock.json     # Pavilion uses pnpm everywhere
+pnpm install
 ```
 
 The boilerplate already ships the house stack: Express, TypeScript (strict), Prisma, Winston,
@@ -25,13 +26,32 @@ Biome, envalid, nodemon, plus the `responseHandler` and `requestHeaderHandler` m
 
 ## 3. Wire it up
 
-- **package.json** — set `name` to `pavilion-be-<service>` and update `description`.
+- **package.json** — set `name` to `pavilion-be-<service>` and update `description`. Add
+  `"packageManager": "pnpm@10.13.1"` and the `pnpm.onlyBuiltDependencies` block listing the Prisma
+  packages (copy from any existing service — without it pnpm silently skips Prisma's postinstall).
+  Ensure `"build": "tsc && tsc-alias"`; `tsc` alone leaves unresolved path aliases in `dist/`.
+- **tsconfig.json** — needs `"include": ["src/**/*"]` and `"skipLibCheck": true` (the latter is
+  required if the service uses `requestHeaderHandler`, which augments Express's `Request.headers`).
 - **.env / .env.example** — copy `.env.example` to `.env`, set a unique `NODE_PORT` (each service
   gets its own), a service-specific `DATABASE_URL`, and any secrets the service needs. Never commit `.env`.
-- **Install only what this service needs** on top of the boilerplate (e.g. `npm i ioredis`,
-  `npm i zod`). Don't pull in deps the service won't use.
-- **prisma/schema.prisma** — define this service's own models, then `npx prisma migrate dev`.
-  This service owns this database; never point it at another service's DB.
+- **Install only what this service needs** on top of the boilerplate (e.g. `pnpm add ioredis`,
+  `pnpm add zod`). Don't pull in deps the service won't use.
+- **prisma/schema.prisma** — define this service's own models, then `pnpm prisma migrate dev`.
+  This service owns this database; never point it at another service's DB. Commit the generated
+  `prisma/migrations/` — the container entrypoint applies them with `migrate deploy`.
+
+## 3b. Wire it into Docker
+
+The stack runs via the root `docker-compose.yml` (see root CLAUDE.md). A new service needs:
+
+- **`Dockerfile`, `.dockerignore`, `docker-entrypoint.sh`** — copy verbatim from an existing
+  service and change only the `EXPOSE` port and the header comment.
+- **`docker/postgres/init-databases.sh`** — add the service to the `for service in ...` loop so its
+  role and database are created.
+- **`docker-compose.yml`** — add the service with its env, `depends_on` health conditions, port
+  mapping, and a healthcheck against `/api/v1/health`. Set every env var the service needs
+  explicitly rather than relying on envalid devDefaults, so the `prod` target resolves too.
+- **`docker-compose.override.yml`** — add the `dev` target and the `src`/`prisma` bind mounts.
 
 ## 4. Respect the boundaries
 
@@ -50,8 +70,11 @@ run commands, and any service-specific rules. Follow the pattern of the existing
 ## 6. Verify
 
 ```bash
-npm run dev      # boots on NODE_PORT via nodemon
-npx biome check  # lint + format must pass
+pnpm dev          # boots on NODE_PORT via nodemon
+pnpm build        # must succeed — verifies tsc + tsc-alias are wired correctly
+pnpm biome check  # lint + format must pass
+
+docker compose up <service>   # must come up healthy in the stack too
 ```
 
 Hit a route and confirm responses use the `{ success, data }` envelope.

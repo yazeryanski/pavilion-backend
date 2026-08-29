@@ -29,4 +29,8 @@ Author is always `req.userId` (from `requestHeaderHandler`). Update/delete enfor
 ## Config
 
 - S3 vars are required (endpoint/region have dev defaults).
+- `S3_ENDPOINT` is what the SDK connects to; `S3_PUBLIC_ENDPOINT` (optional, falls back to
+  `S3_ENDPOINT`) is what `getObjectUrl` puts in the URLs returned to clients. They differ when the
+  store sits on a private network — under Docker the service reaches MinIO at `http://minio:9000`,
+  but a browser on the host needs `http://localhost:9000`.
 - `Post` model: `id`, `content?`, `imageUrl?`, `authorId`, `likedBy String[]`, `deleted`, timestamps. Note: `likedBy` and the `deleted` soft-delete flag exist but no endpoint uses them yet (delete is a hard delete).

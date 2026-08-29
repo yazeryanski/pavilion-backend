@@ -15,7 +15,11 @@ const bucketClient = new S3Client({
 });
 
 export const getObjectUrl = (ObjectKey: string): string => {
-  return `${env.S3_ENDPOINT}/${env.S3_BUCKET_NAME}/${ObjectKey}`;
+  // The client above uses the internal endpoint; URLs returned to callers must use the
+  // externally reachable one when the two differ (see S3_PUBLIC_ENDPOINT in config).
+  const publicEndpoint = env.S3_PUBLIC_ENDPOINT || env.S3_ENDPOINT;
+
+  return `${publicEndpoint}/${env.S3_BUCKET_NAME}/${ObjectKey}`;
 };
 
 /**

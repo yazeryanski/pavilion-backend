@@ -1,0 +1,68 @@
+# Development overrides — applied automatically by `docker compose up`.
+#
+# Switches every service to the `dev` image target (nodemon + ts-node) and bind-mounts the
+# source so edits on the host restart the process in the container. `node_modules` is NOT
+# mounted: it stays as built inside the image, which keeps pnpm's symlinked store intact and
+# avoids the host's Windows-built binaries leaking into a Linux container.
+#
+# Every service runs nodemon with `--exitcrash`. By default nodemon traps a crashed app and
+# idles until a file changes — inside a container that leaves a process that is up but dead,
+# and Docker's restart policy never fires. `depends_on` only orders `compose up`, so after a
+# daemon restart a service can genuinely start before its broker/database; exiting on crash
+# lets `restart: unless-stopped` retry until the dependency is actually reachable.
+# `--legacy-watch` makes nodemon poll instead of relying on inotify: Docker Desktop does not
+# propagate filesystem events from a Windows host across a bind mount, so without polling an
+# edit on the host never reaches the watcher and hot reload silently does nothing.
+# nodemon.json still supplies watch/ext/exec.
+#
+# Each service is tagged `:dev` so the two targets never collide. Without a distinct tag both
+# targets write to the same `pavilion/<svc>` tag, and a `docker compose up` after a prod build
+# silently reuses the prod image — which has no nodemon, so the dev command fails to exec.
+#
+# For the production shape instead:  docker compose -f docker-compose.yml up --build
+# (there `node dist/main.js` exits on its own, so the restart policy already covers this.)
+
+services:
+  auth:
+    build:
+      target: dev
+    image: pavilion/auth:dev
+    command: ['./node_modules/.bin/nodemon', '--exitcrash', '--legacy-watch']
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./services/auth/src:/app/src
+      - ./services/auth/prisma:/app/prisma
+
+  post:
+    build:
+      target: dev
+    image: pavilion/post:dev
+    command: ['./node_modules/.bin/nodemon', '--exitcrash', '--legacy-watch']
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./services/post/src:/app/src
+      - ./services/post/prisma:/app/prisma
+
+  profile:
+    build:
+      target: dev
+    image: pavilion/profile:dev
+    command: ['./node_modules/.bin/nodemon', '--exitcrash', '--legacy-watch']
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./services/profile/src:/app/src
+      - ./services/profile/prisma:/app/prisma
+
+  newsletter:
+    build:
+      target: dev
+    image: pavilion/newsletter:dev
+    command: ['./node_modules/.bin/nodemon', '--exitcrash', '--legacy-watch']
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./services/newsletter/src:/app/src
+      - ./services/newsletter/prisma:/app/prisma

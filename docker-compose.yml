@@ -1,0 +1,260 @@
+# Pavilion — full stack, single entry point.
+#
+#   docker compose up                          dev: hot reload (docker-compose.override.yml applies)
+#   docker compose -f docker-compose.yml up     prod: compiled images, no bind mounts
+#
+# Configuration comes from `.env` at this directory (copy `.env.example`).
+# Every variable a service needs is set explicitly below rather than relying on envalid's
+# devDefaults, so the dev and prod targets resolve identical configuration.
+
+name: pavilion
+
+services:
+  # ---------------------------------------------------------------- infrastructure
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: pavilion-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+      # Consumed by init-databases.sh for the per-service roles.
+      SERVICE_DB_PASSWORD: ${SERVICE_DB_PASSWORD}
+    ports:
+      # 5433 on the host: a native Postgres commonly already holds 5432.
+      - '${POSTGRES_HOST_PORT:-5433}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Runs once, on first creation of the volume. `docker compose down -v` forces a re-run.
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    container_name: pavilion-redis
+    restart: unless-stopped
+    command: ['redis-server', '--requirepass', '${REDIS_PASSWORD}']
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: pavilion-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - '5672:5672'   # AMQP
+      - '15672:15672' # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+
+  minio:
+    image: minio/minio
+    container_name: pavilion-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - '9000:9000' # S3 API
+      - '9001:9001' # Console
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # One-shot: creates the bucket and the scoped access key the post service authenticates with,
+  # then exits. Post waits on it completing rather than merely starting.
+  minio-init:
+    image: minio/mc
+    container_name: pavilion-minio-init
+    restart: 'no'
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS: ${S3_SECRET_ACCESS}
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        set -e
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        mc mb --ignore-existing "local/$$S3_BUCKET_NAME"
+        # post's getObjectUrl returns an unsigned URL, so objects must be anonymously readable.
+        mc anonymous set download "local/$$S3_BUCKET_NAME"
+        mc admin user add local "$$S3_ACCESS_KEY_ID" "$$S3_SECRET_ACCESS" 2>/dev/null || true
+        mc admin policy attach local readwrite --user "$$S3_ACCESS_KEY_ID" 2>/dev/null || true
+        echo "[minio-init] bucket '$$S3_BUCKET_NAME' and user '$$S3_ACCESS_KEY_ID' ready"
+
+  # ---------------------------------------------------------------------- services
+
+  auth:
+    build:
+      context: ./services/auth
+      target: prod
+    image: pavilion/auth
+    container_name: pavilion-auth
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://pavilion-auth-db-user:${SERVICE_DB_PASSWORD}@postgres:5432/pavilion-auth-db?schema=public
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - '3000:3000'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/api/v1/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  post:
+    build:
+      context: ./services/post
+      target: prod
+    image: pavilion/post
+    container_name: pavilion-post
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      NODE_PORT: 3001
+      NODE_ENV: production
+      DATABASE_URL: postgresql://pavilion-post-db-user:${SERVICE_DB_PASSWORD}@postgres:5432/pavilion-post-db?schema=public
+      # Internal endpoint for the SDK; public endpoint for the URLs handed back to clients.
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS: ${S3_SECRET_ACCESS}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+    ports:
+      - '3001:3001'
+    healthcheck:
+      # requestHeaderHandler runs before the routes, so even /health rejects a request without
+      # the three identity headers. The probe therefore sends them.
+      test:
+        - CMD-SHELL
+        - >-
+          wget -qO- --header='x-user-id: healthcheck'
+          --header='x-service-name: healthcheck' --header='x-request-id: healthcheck'
+          http://localhost:3001/api/v1/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  profile:
+    build:
+      context: ./services/profile
+      target: prod
+    image: pavilion/profile
+    container_name: pavilion-profile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_PORT: 3002
+      NODE_ENV: production
+      DATABASE_URL: postgresql://pavilion-profile-db-user:${SERVICE_DB_PASSWORD}@postgres:5432/pavilion-profile-db?schema=public
+    ports:
+      - '3002:3002'
+    healthcheck:
+      # See the note on post's healthcheck: requestHeaderHandler gates /health too.
+      test:
+        - CMD-SHELL
+        - >-
+          wget -qO- --header='x-user-id: healthcheck'
+          --header='x-service-name: healthcheck' --header='x-request-id: healthcheck'
+          http://localhost:3002/api/v1/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  newsletter:
+    build:
+      context: ./services/newsletter
+      target: prod
+    image: pavilion/newsletter
+    container_name: pavilion-newsletter
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      # Fan-out resolves an author's friends over HTTP against profile.
+      profile:
+        condition: service_healthy
+    environment:
+      NODE_PORT: 3004
+      NODE_ENV: production
+      DATABASE_URL: postgresql://pavilion-newsletter-db-user:${SERVICE_DB_PASSWORD}@postgres:5432/pavilion-newsletter-db?schema=public
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      PROFILE_SERVICE_URL: http://profile:3002
+    ports:
+      - '3004:3004'
+    healthcheck:
+      # See the note on post's healthcheck: requestHeaderHandler gates /health too.
+      test:
+        - CMD-SHELL
+        - >-
+          wget -qO- --header='x-user-id: healthcheck'
+          --header='x-service-name: healthcheck' --header='x-request-id: healthcheck'
+          http://localhost:3004/api/v1/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  postgres-data:
+  redis-data:
+  rabbitmq-data:
+  minio-data:

@@ -2,3 +2,6 @@
 /services/**/dist
 /services/**/logs
 /services/**/.env
+
+# Compose-level configuration (see .env.example)
+/.env

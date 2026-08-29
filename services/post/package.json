@@ -5,12 +5,16 @@
 	"main": "main.js",
 	"scripts": {
 		"dev": "nodemon",
-		"build": "tsc-alias",
-    "debug": "node --inspect dist/main.js",
+		"build": "tsc && tsc-alias",
+		"debug": "node --inspect dist/main.js",
 		"start": "node dist/main.js"
 	},
 	"author": "Narek Yazeryan",
 	"license": "ISC",
+	"packageManager": "pnpm@10.13.1",
+	"pnpm": {
+		"onlyBuiltDependencies": ["@prisma/client", "@prisma/engines", "prisma"]
+	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.821.0",
 		"@prisma/client": "^6.4.0",
@@ -18,6 +22,7 @@
 		"envalid": "^8.0.0",
 		"express": "^4.21.2",
 		"multer": "^2.0.1",
+		"prisma": "^6.11.1",
 		"uuid": "^11.1.0",
 		"winston": "^3.17.0",
 		"zod": "^4.0.5"
@@ -28,7 +33,6 @@
 		"@types/multer": "^2.0.0",
 		"@types/node": "^22.13.4",
 		"nodemon": "^3.1.9",
-		"prisma": "^6.11.1",
 		"ts-node": "^10.9.2",
 		"tsc-alias": "^1.8.16",
 		"tsconfig-paths": "^4.2.0",

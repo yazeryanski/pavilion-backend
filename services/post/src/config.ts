@@ -11,6 +11,10 @@ const env = cleanEnv(process.env, {
 
 	// S3 Configuration
 	S3_ENDPOINT: str({ devDefault: 'https://s3.amazonaws.com' }),
+	// Endpoint used to build the URLs handed back to clients. Defaults to S3_ENDPOINT and only
+	// differs when the store is reached over a private network: in Docker the service talks to
+	// `http://minio:9000`, but that host does not resolve for a browser on the host machine.
+	S3_PUBLIC_ENDPOINT: str({ default: '' }),
 	S3_REGION: str({ devDefault: 'us-east-1' }),
 	S3_ACCESS_KEY_ID: str(),
 	S3_SECRET_ACCESS: str(),

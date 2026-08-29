@@ -9,6 +9,9 @@ boundaries. Newsletter-specific notes below.
 Requires PostgreSQL **and RabbitMQ** — the service refuses to start unless both connect
 (`src/main.ts`). Build uses `tsc && tsc-alias`, emitting to `dist/main.js`.
 
+`prisma/migrations/` holds the initial migration for the `Newsletter` model; the container
+entrypoint applies it with `prisma migrate deploy` on start.
+
 ## How it works
 
 1. When a post is published, the `post` service will publish a `post.published` message to the
@@ -45,4 +48,6 @@ Requires PostgreSQL **and RabbitMQ** — the service refuses to start unless bot
 ## Config (`.env`)
 
 - `NODE_PORT` (default 3004), `DATABASE_URL`, `RABBITMQ_URL`, `PROFILE_SERVICE_URL`.
-- `docker-compose.yml` provides a local RabbitMQ (management UI at `http://localhost:15672`).
+- RabbitMQ comes from the root `docker-compose.yml` along with the rest of the stack
+  (management UI at `http://localhost:15672`). The service-local compose file is gone — see
+  the root CLAUDE.md "Running the stack (Docker)".
