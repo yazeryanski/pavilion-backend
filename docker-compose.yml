@@ -253,6 +253,43 @@ services:
       retries: 5
       start_period: 20s
 
+  # The public entry point. Terminates the client's bearer token against auth, then proxies to
+  # the service that owns the path, injecting the identity headers those services trust.
+  gateway:
+    build:
+      context: ./services/gateway
+      target: prod
+    image: pavilion/gateway
+    container_name: pavilion-gateway
+    restart: unless-stopped
+    depends_on:
+      auth:
+        condition: service_healthy
+      post:
+        condition: service_healthy
+      profile:
+        condition: service_healthy
+      newsletter:
+        condition: service_healthy
+    environment:
+      NODE_PORT: 8080
+      NODE_ENV: production
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+      AUTH_SERVICE_URL: http://auth:3000
+      POST_SERVICE_URL: http://post:3001
+      PROFILE_SERVICE_URL: http://profile:3002
+      NEWSLETTER_SERVICE_URL: http://newsletter:3004
+    ports:
+      - '8080:8080'
+    healthcheck:
+      # No requestHeaderHandler here — the gateway issues those headers rather than consuming
+      # them, so the plain probe (as in auth) is enough.
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8080/api/v1/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
 volumes:
   postgres-data:
   redis-data:

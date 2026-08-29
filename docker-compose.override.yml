@@ -66,3 +66,14 @@ services:
     volumes:
       - ./services/newsletter/src:/app/src
       - ./services/newsletter/prisma:/app/prisma
+
+  gateway:
+    build:
+      target: dev
+    image: pavilion/gateway:dev
+    command: ['./node_modules/.bin/nodemon', '--exitcrash', '--legacy-watch']
+    environment:
+      NODE_ENV: development
+    volumes:
+      # No prisma mount: the gateway owns no database.
+      - ./services/gateway/src:/app/src
