@@ -5,6 +5,7 @@ import { httpLogger } from '@middlewares/httpLogger.middleware';
 import requestContext from '@middlewares/requestContext.middleware';
 import responseHandler from '@middlewares/responseHandler.middleware';
 
+import registerProxyRoutes from '@proxy/routes';
 import router from '@routes/index';
 
 import env from '@/config';
@@ -29,6 +30,10 @@ app.use(httpLogger);
 
 // Routes — the gateway's own endpoints (health)
 app.use('/api/', router);
+
+// Reverse proxy to the downstream services. Registered after the gateway's own routes so
+// /api/v1/health is answered here rather than forwarded, and it ends in a catch-all 404.
+registerProxyRoutes(app);
 
 // Error Handler - Must be the last middleware
 app.use(errorHandler as express.ErrorRequestHandler);
