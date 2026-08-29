@@ -2,6 +2,7 @@ import express from 'express';
 
 import requestHeaderHandler from '@/middlewares/requestHeaderHandler.middleware';
 import errorHandler from '@middlewares/errorHandler.middleware';
+import gatewayOnly from '@middlewares/gatewayOnly.middleware';
 import { httpLogger } from '@middlewares/httpLogger.middleware';
 import responseHandler from '@middlewares/responseHandler.middleware';
 
@@ -19,6 +20,8 @@ const app = express();
 // Middlewares
 app.use(express.json());
 app.use(responseHandler);
+// Before requestHeaderHandler: an unverified x-user-id must never be read.
+app.use(gatewayOnly);
 app.use(requestHeaderHandler);
 app.use(httpLogger);
 

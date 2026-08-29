@@ -9,6 +9,10 @@ const env = cleanEnv(process.env, {
 	// Database Configuration
 	DATABASE_URL: str(),
 
+	// Shared with the API gateway; see gatewayOnly.middleware. Only enforced in production,
+	// hence the devDefault.
+	GATEWAY_SECRET: str({ devDefault: 'dev-gateway-secret' }),
+
 	// S3 Configuration
 	S3_ENDPOINT: str({ devDefault: 'https://s3.amazonaws.com' }),
 	// Endpoint used to build the URLs handed back to clients. Defaults to S3_ENDPOINT and only

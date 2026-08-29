@@ -12,8 +12,14 @@ Requires PostgreSQL **and Redis** — refuses to start unless both connect.
 - `POST /login` — verify credentials, return token pair
 - `POST /refresh` — rotate: validate refresh token, issue new pair
 - `POST /logout` — delete stored refresh token
+- `POST /verify` — introspect an access token; `Authorization: Bearer <token>` → `{ userId }`
 
 `register`/`login` are gated by `validateCredentials`; `refresh`/`logout` by `validateRefreshToken`.
+`verify` is guarded by the token it receives, so it takes no middleware.
+
+`verify` exists for the API gateway: JWT verification lives only here, so the gateway asks this
+service who a bearer token belongs to before injecting `x-user-id` downstream. It is internal —
+the gateway refuses to proxy `/api/v1/auth/verify` from outside.
 
 ## Tokens
 

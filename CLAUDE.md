@@ -6,11 +6,14 @@ Pavilion — A social network application built on a microservice architecture.
 
 ```
 services/
+  gateway/    - Public entry point: token termination + reverse proxy
   auth/       - Authentication & token issuance
   post/       - Post CRUD and image uploads
   profile/    - User profile management
   newsletter/ - Per-user feed of friends' posts (RabbitMQ consumer)
 ```
+
+`gateway` is the only service a client talks to. The other four are internal.
 
 ## Stack (all services)
 
@@ -52,7 +55,9 @@ docker compose down           # stop (add -v to also wipe the data volumes)
 - Compose supplies all configuration via the environment. The `services/*/.env` files are
   excluded from the images and only apply when running a service directly on the host.
 
-Ports: auth 3000, post 3001, profile 3002, newsletter 3004, RabbitMQ UI 15672, MinIO console 9001.
+Ports: **gateway 8080** (the only one published in the prod target), auth 3000, post 3001,
+profile 3002, newsletter 3004, RabbitMQ UI 15672, MinIO console 9001. The four service ports are
+republished by `docker-compose.override.yml`, so they are reachable on the host in dev only.
 
 ## Commands
 
@@ -89,20 +94,33 @@ Never build response objects manually. Always use `res.success(data?)` and `res.
 ## Request Flow
 
 ```
-Client → API Gateway / upstream → injects x-user-id, x-service-name, x-request-id headers → service
+Client ──Authorization: Bearer <access token>──▶ gateway
+                                                  │
+                            POST /api/v1/verify   │  (auth answers { userId })
+                                       auth ◀─────┤
+                                                  │
+     injects x-user-id, x-service-name, x-request-id, x-gateway-secret
+                                                  ▼
+                                    post / profile / newsletter
 ```
 
-`post` and `profile` use `requestHeaderHandler` middleware to map these headers onto `req.userId`,
-`req.serviceName`, and `req.requestId`. The `auth` service does **not** use `requestHeaderHandler` —
-it is the upstream issuer, not a downstream consumer.
+`post`, `profile` and `newsletter` use `requestHeaderHandler` middleware to map these headers onto
+`req.userId`, `req.serviceName`, and `req.requestId`. Neither `gateway` nor `auth` uses it — they
+issue the headers rather than consuming them.
+
+The gateway strips any client-supplied `x-user-id`, `x-service-name` and `x-gateway-secret` before
+routing (`requestContext.middleware.ts`) and sets them itself. `/api/v1/auth/*` is the only public
+upstream (login cannot require being logged in); everything else needs a valid access token.
 
 ## Boundaries (Do NOT)
 
 - Each service owns its own database — never query another service's DB directly.
 - Never import code from another service's directory.
 - Inter-service synchronous calls use direct HTTP. Async/fan-out messaging is planned via RabbitMQ (see Roadmap).
-- Never add JWT validation inside `post` or `profile` — JWT verification is handled exclusively in `auth`.
+- Never add JWT validation inside `post`, `profile`, `newsletter` or `gateway` — JWT verification is handled exclusively in `auth`. The gateway holds no token secret; it calls `auth POST /api/v1/verify`.
 - In `post` and `profile`: never read `x-user-id` from raw headers. Use `req.userId` (set by `requestHeaderHandler`).
+- Never expose a service to external traffic directly. Only `gateway` publishes a host port in the prod target; the four services accept a request only when it carries `x-gateway-secret` (`gatewayOnly.middleware.ts`, enforced when `NODE_ENV=production`).
+- Never add a body parser to `gateway` — a consumed request body cannot be streamed to an upstream, which breaks `post`'s multipart upload.
 - Each service is self-contained — there is no shared code module. If two services need the same type or util, duplicate it in each.
 
 ## Commits
@@ -113,6 +131,7 @@ it is the upstream issuer, not a downstream consumer.
 [AUTH] feat: add token rotation on refresh
 [POST] fix: ownership check on delete
 [PROFILE] feat: add avatar support
+[GATEWAY] feat: proxy requests to downstream services
 ```
 
 ## Roadmap
@@ -124,3 +143,5 @@ it is the upstream issuer, not a downstream consumer.
 
 - Working on a specific service → `services/<service>/CLAUDE.md`
 - Setting up a new service → `services/agent_docs/new-service-creation.md`
+- Routing, auth termination or exposing a new endpoint publicly → `services/gateway/CLAUDE.md`
+  (a new downstream route is not reachable until the gateway proxies it)

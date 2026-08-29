@@ -19,6 +19,11 @@
 # targets write to the same `pavilion/<svc>` tag, and a `docker compose up` after a prod build
 # silently reuses the prod image — which has no nodemon, so the dev command fails to exec.
 #
+# Only the gateway publishes a host port in docker-compose.yml — externally, the stack is
+# reachable through it alone. The four services get their ports back here, and `NODE_ENV:
+# development` below also switches off their gatewayOnly check, so they stay directly callable
+# on localhost exactly as they were before the gateway existed. The prod target has neither.
+#
 # For the production shape instead:  docker compose -f docker-compose.yml up --build
 # (there `node dist/main.js` exits on its own, so the restart policy already covers this.)
 
@@ -30,6 +35,8 @@ services:
     command: ['./node_modules/.bin/nodemon', '--exitcrash', '--legacy-watch']
     environment:
       NODE_ENV: development
+    ports:
+      - '3000:3000'
     volumes:
       - ./services/auth/src:/app/src
       - ./services/auth/prisma:/app/prisma
@@ -41,6 +48,8 @@ services:
     command: ['./node_modules/.bin/nodemon', '--exitcrash', '--legacy-watch']
     environment:
       NODE_ENV: development
+    ports:
+      - '3001:3001'
     volumes:
       - ./services/post/src:/app/src
       - ./services/post/prisma:/app/prisma
@@ -52,6 +61,8 @@ services:
     command: ['./node_modules/.bin/nodemon', '--exitcrash', '--legacy-watch']
     environment:
       NODE_ENV: development
+    ports:
+      - '3002:3002'
     volumes:
       - ./services/profile/src:/app/src
       - ./services/profile/prisma:/app/prisma
@@ -63,6 +74,19 @@ services:
     command: ['./node_modules/.bin/nodemon', '--exitcrash', '--legacy-watch']
     environment:
       NODE_ENV: development
+    ports:
+      - '3004:3004'
     volumes:
       - ./services/newsletter/src:/app/src
       - ./services/newsletter/prisma:/app/prisma
+
+  gateway:
+    build:
+      target: dev
+    image: pavilion/gateway:dev
+    command: ['./node_modules/.bin/nodemon', '--exitcrash', '--legacy-watch']
+    environment:
+      NODE_ENV: development
+    volumes:
+      # No prisma mount: the gateway owns no database.
+      - ./services/gateway/src:/app/src

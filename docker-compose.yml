@@ -140,8 +140,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-    ports:
-      - '3000:3000'
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+    # No published port: only the gateway is reachable from the host. The dev override puts
+    # 3000 back so the service stays directly debuggable.
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/api/v1/health || exit 1']
       interval: 10s
@@ -172,8 +173,9 @@ services:
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
       S3_SECRET_ACCESS: ${S3_SECRET_ACCESS}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
-    ports:
-      - '3001:3001'
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+    # No published port: only the gateway is reachable from the host. The dev override puts
+    # 3001 back so the service stays directly debuggable.
     healthcheck:
       # requestHeaderHandler runs before the routes, so even /health rejects a request without
       # the three identity headers. The probe therefore sends them.
@@ -202,8 +204,9 @@ services:
       NODE_PORT: 3002
       NODE_ENV: production
       DATABASE_URL: postgresql://pavilion-profile-db-user:${SERVICE_DB_PASSWORD}@postgres:5432/pavilion-profile-db?schema=public
-    ports:
-      - '3002:3002'
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+    # No published port: only the gateway is reachable from the host. The dev override puts
+    # 3002 back so the service stays directly debuggable.
     healthcheck:
       # See the note on post's healthcheck: requestHeaderHandler gates /health too.
       test:
@@ -238,8 +241,9 @@ services:
       DATABASE_URL: postgresql://pavilion-newsletter-db-user:${SERVICE_DB_PASSWORD}@postgres:5432/pavilion-newsletter-db?schema=public
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       PROFILE_SERVICE_URL: http://profile:3002
-    ports:
-      - '3004:3004'
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+    # No published port: only the gateway is reachable from the host. The dev override puts
+    # 3004 back so the service stays directly debuggable.
     healthcheck:
       # See the note on post's healthcheck: requestHeaderHandler gates /health too.
       test:
@@ -248,6 +252,43 @@ services:
           wget -qO- --header='x-user-id: healthcheck'
           --header='x-service-name: healthcheck' --header='x-request-id: healthcheck'
           http://localhost:3004/api/v1/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # The public entry point. Terminates the client's bearer token against auth, then proxies to
+  # the service that owns the path, injecting the identity headers those services trust.
+  gateway:
+    build:
+      context: ./services/gateway
+      target: prod
+    image: pavilion/gateway
+    container_name: pavilion-gateway
+    restart: unless-stopped
+    depends_on:
+      auth:
+        condition: service_healthy
+      post:
+        condition: service_healthy
+      profile:
+        condition: service_healthy
+      newsletter:
+        condition: service_healthy
+    environment:
+      NODE_PORT: 8080
+      NODE_ENV: production
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+      AUTH_SERVICE_URL: http://auth:3000
+      POST_SERVICE_URL: http://post:3001
+      PROFILE_SERVICE_URL: http://profile:3002
+      NEWSLETTER_SERVICE_URL: http://newsletter:3004
+    ports:
+      - '8080:8080'
+    healthcheck:
+      # No requestHeaderHandler here — the gateway issues those headers rather than consuming
+      # them, so the plain probe (as in auth) is enough.
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8080/api/v1/health || exit 1']
       interval: 10s
       timeout: 5s
       retries: 5
