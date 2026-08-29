@@ -1,6 +1,7 @@
 import express from 'express';
 
 import errorHandler from '@middlewares/errorHandler.middleware';
+import gatewayOnly from '@middlewares/gatewayOnly.middleware';
 import { httpLogger } from '@middlewares/httpLogger.middleware';
 import responseHandler from '@middlewares/responseHandler.middleware';
 
@@ -18,6 +19,8 @@ const app = express();
 app.use(express.json());
 app.use(httpLogger);
 app.use(responseHandler);
+// After responseHandler, which supplies the res.error it rejects with.
+app.use(gatewayOnly);
 
 // Routes
 app.use('/api/', router);

@@ -13,6 +13,10 @@ const env = cleanEnv(process.env, {
 	REDIS_HOST: str({ devDefault: '127.0.0.1' }),
 	REDIS_PORT: port({ devDefault: 6379 }),
 	REDIS_PASSWORD: str({ devDefault: undefined }),
+
+	// Shared with the API gateway; see gatewayOnly.middleware. Only enforced in production,
+	// hence the devDefault.
+	GATEWAY_SECRET: str({ devDefault: 'dev-gateway-secret' }),
 });
 
 export const REFRESH_TOKEN_EXPIRATION = 60 * 60 * 24 * 7; // 7 days
